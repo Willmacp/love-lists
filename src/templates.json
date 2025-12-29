@@ -5,6 +5,9 @@
     "description": "A practical, low-stress declutter you can actually finish.",
     "category": "Home & Life Admin",
     "tags": ["home", "declutter", "weekend", "calm"],
+    "timeMins": 180,
+    "difficulty": "Medium",
+    "goodFor": ["Weekend reset", "Small spaces", "Low energy days"],
     "steps": [
       "Pick one small zone (one drawer, one bench, one corner)",
       "Set up 4 piles: Keep / Donate / Bin / Unsure",
@@ -22,6 +25,9 @@
     "description": "A realistic bathroom clean, start to finish.",
     "category": "Home",
     "tags": ["cleaning", "bathroom", "home"],
+    "timeMins": 35,
+    "difficulty": "Easy",
+    "goodFor": ["Weekly clean", "Guests coming", "Fast win"],
     "steps": [
       "Open window or turn on fan",
       "Clear surfaces (sink, shower edge, floor)",
@@ -41,6 +47,9 @@
     "description": "Step-by-step cupboard painting without cutting corners.",
     "category": "DIY & Renovation",
     "tags": ["DIY", "painting", "kitchen", "weekend"],
+    "timeMins": 720,
+    "difficulty": "Hard",
+    "goodFor": ["Big upgrade", "Before/after", "Weekend project"],
     "steps": [
       "Choose paint system (primer + cabinet paint)",
       "Empty cupboards and remove doors",
@@ -63,6 +72,9 @@
     "description": "Simple home-made jam, no stress.",
     "category": "Cooking & Food",
     "tags": ["cooking", "preserving", "weekend", "food"],
+    "timeMins": 90,
+    "difficulty": "Medium",
+    "goodFor": ["Gifts", "Seasonal fruit", "Sunday project"],
     "steps": [
       "Choose fruit and recipe",
       "Wash and prepare fruit",
@@ -82,6 +94,9 @@
     "description": "A calm, predictable bedtime flow.",
     "category": "Kids & Family",
     "tags": ["toddler", "bedtime", "routine", "kids"],
+    "timeMins": 35,
+    "difficulty": "Easy",
+    "goodFor": ["Calm evenings", "Consistency", "Fewer battles"],
     "steps": [
       "Tidy toys together (5-minute warning)",
       "Bath time",
@@ -100,6 +115,9 @@
     "description": "A calm, repeatable school-morning flow.",
     "category": "Kids & Family",
     "tags": ["kids", "school", "routine", "morning"],
+    "timeMins": 45,
+    "difficulty": "Easy",
+    "goodFor": ["School days", "Less rushing", "Independence"],
     "steps": [
       "Night before: pack bag and choose clothes",
       "Wake up and cuddle check-in",
@@ -118,6 +136,9 @@
     "description": "The essential steps to get through a house move.",
     "category": "Life Events",
     "tags": ["moving", "life admin", "stress"],
+    "timeMins": 360,
+    "difficulty": "Hard",
+    "goodFor": ["Big transitions", "Families", "Less chaos"],
     "steps": [
       "Confirm moving date",
       "Book removalist or hire vehicle",
@@ -137,6 +158,9 @@
     "description": "High-level wedding planning, start to finish.",
     "category": "Life Events",
     "tags": ["wedding", "planning", "life event"],
+    "timeMins": 240,
+    "difficulty": "Hard",
+    "goodFor": ["Getting started", "Avoid overwhelm", "Big picture"],
     "steps": [
       "Set rough budget",
       "Agree on guest size and style",
@@ -157,6 +181,9 @@
     "description": "Lock in the big-ticket wedding items.",
     "category": "Life Events",
     "tags": ["wedding", "vendors", "planning"],
+    "timeMins": 180,
+    "difficulty": "Medium",
+    "goodFor": ["Bookings", "Comparing quotes", "Decision-making"],
     "steps": [
       "Shortlist venues",
       "Visit top choices",
@@ -174,6 +201,9 @@
     "description": "All the fiddly wedding admin in one place.",
     "category": "Life Events",
     "tags": ["wedding", "admin", "planning"],
+    "timeMins": 150,
+    "difficulty": "Medium",
+    "goodFor": ["RSVPs", "Run sheet", "Final details"],
     "steps": [
       "Create guest list",
       "Send save-the-dates",
