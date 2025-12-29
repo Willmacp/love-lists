@@ -15,52 +15,47 @@ function storageKey(listId: string) {
 export default function App() {
   const lists = templates as Template[];
 
-  // Default to first list
-  const [activeId, setActiveId] = useState<string>(lists[0]?.id ?? "");
+  const [query, setQuery] = useState("");
+  const [activeId, setActiveId] = useState<string>(""); // empty = Explore view
+
   const active = useMemo(
-    () => lists.find((l) => l.id === activeId) ?? lists[0],
+    () => lists.find((l) => l.id === activeId) ?? null,
     [activeId, lists]
   );
 
-  // Progress is just an array of booleans, one per step
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return lists;
+    return lists.filter((l) => {
+      const hay = `${l.title} ${l.description}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [query, lists]);
+
+  // checklist state for active list
   const [checked, setChecked] = useState<boolean[]>([]);
 
-  // Load progress when active list changes
+  // Load progress when active changes
   useEffect(() => {
     if (!active) return;
     const raw = localStorage.getItem(storageKey(active.id));
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as boolean[];
-        setChecked(
-          active.steps.map((_, i) => Boolean(parsed[i]))
-        );
+        setChecked(active.steps.map((_, i) => Boolean(parsed[i])));
         return;
       } catch {
-        // fall through to reset
+        // fallthrough
       }
     }
     setChecked(active.steps.map(() => false));
   }, [active?.id]);
 
-  // Save progress whenever it changes
+  // Save progress
   useEffect(() => {
     if (!active) return;
     localStorage.setItem(storageKey(active.id), JSON.stringify(checked));
   }, [checked, active?.id]);
-
-  if (!active) {
-    return (
-      <div className="container">
-        <h1>Love Lists</h1>
-        <p>No lists found yet.</p>
-      </div>
-    );
-  }
-
-  const done = checked.filter(Boolean).length;
-  const total = active.steps.length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
 
   function toggleStep(i: number) {
     setChecked((prev) => {
@@ -71,38 +66,75 @@ export default function App() {
   }
 
   function reset() {
+    if (!active) return;
     setChecked(active.steps.map(() => false));
   }
 
-  return (
-    <div className="container">
-      <h1>Love Lists</h1>
-      <p>Life, thought through.</p>
+  // ---- Explore view ----
+  if (!active) {
+    return (
+      <div className="container">
+        <h1>Love Lists</h1>
+        <p>Practical plans for real life. Pick a list to start.</p>
 
-      <div className="card">
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <label style={{ fontWeight: 700 }}>Choose a list:</label>
-          <select
-            value={activeId}
-            onChange={(e) => setActiveId(e.target.value)}
+        <div className="card">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search (declutter, school, wedding...)"
             style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
               width: "100%",
-              maxWidth: 420
+              padding: "12px 12px",
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              fontSize: 14
             }}
-          >
-            {lists.map((l) => (
-              <option value={l.id} key={l.id}>
-                {l.title}
-              </option>
-            ))}
-          </select>
+          />
+          <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+            Showing {filtered.length} of {lists.length}
+          </p>
+        </div>
+
+        <div className="steps" style={{ marginTop: 16 }}>
+          {filtered.map((l) => (
+            <div
+              key={l.id}
+              className="card"
+              style={{ cursor: "pointer" }}
+              onClick={() => setActiveId(l.id)}
+              role="button"
+              tabIndex={0}
+            >
+              <h2 style={{ marginTop: 0 }}>{l.title}</h2>
+              <p>{l.description}</p>
+              <p style={{ fontSize: 12, color: "#666", marginBottom: 0 }}>
+                {l.steps.length} steps • Tap to open
+              </p>
+            </div>
+          ))}
         </div>
       </div>
+    );
+  }
 
-      <div className="card">
+  // ---- Runner view ----
+  const done = checked.filter(Boolean).length;
+  const total = active.steps.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  return (
+    <div className="container">
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={() => setActiveId("")}
+          style={{ background: "#5f809b" }}
+        >
+          ← Explore
+        </button>
+        <div style={{ fontWeight: 800 }}>Love Lists</div>
+      </div>
+
+      <div className="card" style={{ marginTop: 14 }}>
         <h2 style={{ marginTop: 0 }}>{active.title}</h2>
         <p>{active.description}</p>
 
