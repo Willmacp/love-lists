@@ -212,6 +212,58 @@ function CategoryChips({
   );
 }
 
+/* ---------------- Accordions ---------------- */
+
+function Accordion({
+  title,
+  count,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        background: "#fff",
+        padding: 10,
+        marginTop: 12,
+      }}
+    >
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10,
+          fontWeight: 800,
+          color: "#222",
+          padding: "6px 6px",
+        }}
+      >
+        <span>{title}</span>
+        {typeof count === "number" ? (
+          <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>
+            {count} ▾
+          </span>
+        ) : (
+          <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>▾</span>
+        )}
+      </summary>
+
+      <div style={{ marginTop: 10 }}>{children}</div>
+    </details>
+  );
+}
+
 /* ---------------- List Card ---------------- */
 
 function ListCard({
@@ -282,7 +334,6 @@ function ListCard({
 
       <TagPills tags={l.tags} selectedTag={selectedTag} onTagClick={onTagClick} />
 
-      {/* Mini progress */}
       <div style={{ marginTop: 12 }}>
         <div style={{ fontSize: 12, color: "#444", fontWeight: 800 }}>
           {done}/{total} done ({pct}%)
@@ -308,54 +359,6 @@ function ListCard({
 
       <div className="cardAction">Open</div>
     </div>
-  );
-}
-
-/* ---------------- Accordion Category Section ---------------- */
-
-function CategoryAccordion({
-  title,
-  count,
-  defaultOpen,
-  children,
-}: {
-  title: string;
-  count: number;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <details
-      open={defaultOpen}
-      style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 14,
-        background: "#fff",
-        padding: 10,
-        marginTop: 12,
-      }}
-    >
-      <summary
-        style={{
-          cursor: "pointer",
-          listStyle: "none",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 10,
-          fontWeight: 800,
-          color: "#222",
-          padding: "6px 6px",
-        }}
-      >
-        <span>{title}</span>
-        <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>
-          {count} list{count === 1 ? "" : "s"} ▾
-        </span>
-      </summary>
-
-      <div style={{ marginTop: 10 }}>{children}</div>
-    </details>
   );
 }
 
@@ -408,13 +411,6 @@ export default function App() {
       return matchesQuery && matchesTag && matchesCategory;
     });
   }, [query, selectedTag, selectedCategory, lists]);
-
-  const featured = useMemo(() => lists.slice(0, 3), [lists]);
-
-  const featuredFiltered = useMemo(() => {
-    const ids = new Set(featured.map((x) => x.id));
-    return filtered.filter((l) => ids.has(l.id));
-  }, [featured, filtered]);
 
   const groupedByCategory = useMemo(() => {
     const map = new Map<string, Template[]>();
@@ -547,14 +543,7 @@ export default function App() {
             </p>
 
             {(selectedTag || selectedCategory) && (
-              <div
-                style={{
-                  marginTop: 8,
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {selectedCategory && (
                   <button
                     onClick={() => setSelectedCategory("")}
@@ -591,12 +580,9 @@ export default function App() {
             )}
           </div>
 
+          {/* ✅ ACCORDION BLOCKS AT THE TOP */}
           {showSaved && (
-            <>
-              <div className="sectionHead">
-                <h3>Saved</h3>
-                <div className="hint">Your favourites</div>
-              </div>
+            <Accordion title="⭐ Saved" count={savedLists.length}>
               <div className="steps">
                 {savedLists.map((l) => (
                   <ListCard
@@ -610,15 +596,11 @@ export default function App() {
                   />
                 ))}
               </div>
-            </>
+            </Accordion>
           )}
 
           {showRecent && (
-            <>
-              <div className="sectionHead">
-                <h3>Recent</h3>
-                <div className="hint">Pick up where you left off</div>
-              </div>
+            <Accordion title="🕘 Recent" count={recentLists.length}>
               <div className="steps">
                 {recentLists.map((l) => (
                   <ListCard
@@ -632,61 +614,57 @@ export default function App() {
                   />
                 ))}
               </div>
-            </>
+            </Accordion>
           )}
 
-          <div className="sectionHead">
+          <Accordion title="📚 Browse by category" count={groupedByCategory.length} defaultOpen={false}>
+            {groupedByCategory.map(([cat, arr]) => (
+              <Accordion
+                key={cat}
+                title={cat}
+                count={arr.length}
+                defaultOpen={
+                  selectedCategory
+                    ? cat.toLowerCase() === selectedCategory.toLowerCase()
+                    : false
+                }
+              >
+                <div className="steps">
+                  {arr.map((l) => (
+                    <ListCard
+                      key={l.id}
+                      l={l}
+                      selectedTag={selectedTag}
+                      onOpen={openList}
+                      onTagClick={toggleTag}
+                      isSaved={savedIds.includes(l.id)}
+                      onToggleSaved={toggleSaved}
+                    />
+                  ))}
+                </div>
+              </Accordion>
+            ))}
+          </Accordion>
+
+          {/* Optional: keep Featured below to keep landing view compact */}
+          <div className="sectionHead" style={{ marginTop: 18 }}>
             <h3>Featured</h3>
-            <div className="hint">Curated starters</div>
+            <div className="hint">Quick starters</div>
           </div>
 
           <div className="steps">
-            {(featuredFiltered.length ? featuredFiltered : featured)
-              .slice(0, 3)
-              .map((l) => (
-                <ListCard
-                  key={l.id}
-                  l={l}
-                  selectedTag={selectedTag}
-                  onOpen={openList}
-                  onTagClick={toggleTag}
-                  isSaved={savedIds.includes(l.id)}
-                  onToggleSaved={toggleSaved}
-                />
-              ))}
+            {lists.slice(0, 3).map((l) => (
+              <ListCard
+                key={l.id}
+                l={l}
+                selectedTag={selectedTag}
+                onOpen={openList}
+                onTagClick={toggleTag}
+                isSaved={savedIds.includes(l.id)}
+                onToggleSaved={toggleSaved}
+              />
+            ))}
           </div>
-
-          <div className="sectionHead">
-            <h3>Browse by category</h3>
-            <div className="hint">Tap to expand</div>
-          </div>
-
-          {groupedByCategory.map(([cat, arr]) => (
-            <CategoryAccordion
-              key={cat}
-              title={cat}
-              count={arr.length}
-              defaultOpen={
-                selectedCategory
-                  ? cat.toLowerCase() === selectedCategory.toLowerCase()
-                  : false
-              }
-            >
-              <div className="steps">
-                {arr.map((l) => (
-                  <ListCard
-                    key={l.id}
-                    l={l}
-                    selectedTag={selectedTag}
-                    onOpen={openList}
-                    onTagClick={toggleTag}
-                    isSaved={savedIds.includes(l.id)}
-                    onToggleSaved={toggleSaved}
-                  />
-                ))}
-              </div>
-            </CategoryAccordion>
-          ))}
         </div>
       </>
     );
