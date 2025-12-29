@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import templates from "./templates.json";
 
+type Difficulty = "Easy" | "Medium" | "Hard";
+
 type Template = {
   id: string;
   title: string;
@@ -8,14 +10,22 @@ type Template = {
   category: string;
   tags: string[];
   timeMins: number;
-  difficulty: "Easy" | "Medium" | "Hard";
+  difficulty: Difficulty;
   goodFor: string[];
   steps: string[];
 };
 
-
 function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
+}
+
+function formatTime(mins: number) {
+  if (!mins || mins <= 0) return "";
+  if (mins < 60) return `${mins} mins`;
+  const hrs = Math.round((mins / 60) * 10) / 10; // 1 decimal
+  // If it’s a whole hour, don’t show .0
+  const nice = Number.isInteger(hrs) ? `${hrs}` : `${hrs}`;
+  return `${nice} hrs`;
 }
 
 /* ---------------- Header ---------------- */
@@ -47,7 +57,49 @@ function Header({
   );
 }
 
-/* ---------------- Tag Pills ---------------- */
+/* ---------------- Pills ---------------- */
+
+function SmallPill({
+  text,
+  isSelected,
+  onClick,
+  stopPropagation,
+}: {
+  text: string;
+  isSelected?: boolean;
+  onClick?: () => void;
+  stopPropagation?: boolean;
+}) {
+  const asButton = Boolean(onClick);
+  const style: React.CSSProperties = {
+    fontSize: 12,
+    padding: "6px 10px",
+    borderRadius: 999,
+    border: isSelected ? "1px solid #003535" : "1px solid #e5e7eb",
+    background: isSelected ? "rgba(0,53,53,0.08)" : "#fff",
+    color: "#444",
+    cursor: asButton ? "pointer" : "default",
+    fontWeight: isSelected ? 800 : 600,
+  };
+
+  if (!asButton) {
+    return <span style={style}>{text}</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        if (stopPropagation) e.stopPropagation();
+        onClick?.();
+      }}
+      style={style}
+      aria-pressed={Boolean(isSelected)}
+    >
+      {text}
+    </button>
+  );
+}
 
 function TagPills({
   tags,
@@ -62,33 +114,40 @@ function TagPills({
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
       {tags.slice(0, 8).map((tag) => {
         const isSelected = selectedTag.toLowerCase() === tag.toLowerCase();
-
         return (
-          <button
+          <SmallPill
             key={tag}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTagClick(tag);
-            }}
-            aria-pressed={isSelected}
-            style={{
-              fontSize: 12,
-              padding: "6px 10px",
-              borderRadius: 999,
-              border: isSelected
-                ? "1px solid #003535"
-                : "1px solid #e5e7eb",
-              background: isSelected ? "rgba(0,53,53,0.08)" : "#fff",
-              color: "#444",
-              cursor: "pointer",
-              fontWeight: isSelected ? 700 : 500,
-            }}
-          >
-            {tag}
-          </button>
+            text={tag}
+            isSelected={isSelected}
+            onClick={() => onTagClick(tag)}
+            stopPropagation
+          />
         );
       })}
+    </div>
+  );
+}
+
+function GoodForPills({ items }: { items: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+      {items.slice(0, 4).map((x) => (
+        <span
+          key={x}
+          style={{
+            fontSize: 12,
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#555",
+            fontWeight: 600,
+          }}
+        >
+          {x}
+        </span>
+      ))}
     </div>
   );
 }
@@ -120,6 +179,8 @@ function ListCard({
   const total = l.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
+  const timeLabel = formatTime(l.timeMins);
+
   return (
     <div
       className="card"
@@ -135,15 +196,18 @@ function ListCard({
         {l.category} • {l.steps.length} steps
       </p>
 
-      <TagPills
-        tags={l.tags}
-        selectedTag={selectedTag}
-        onTagClick={onTagClick}
-      />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+        {timeLabel ? <SmallPill text={`⏱ ${timeLabel}`} /> : null}
+        {l.difficulty ? <SmallPill text={`⚡ ${l.difficulty}`} /> : null}
+      </div>
+
+      <GoodForPills items={l.goodFor} />
+
+      <TagPills tags={l.tags} selectedTag={selectedTag} onTagClick={onTagClick} />
 
       {/* Mini progress on the card */}
-      <div style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 12, color: "#444", fontWeight: 700 }}>
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontSize: 12, color: "#444", fontWeight: 800 }}>
           {done}/{total} done ({pct}%)
         </div>
         <div
@@ -170,7 +234,6 @@ function ListCard({
   );
 }
 
-
 /* ---------------- App ---------------- */
 
 export default function App() {
@@ -192,9 +255,9 @@ export default function App() {
     return lists.filter((l) => {
       const matchesQuery = !q
         ? true
-        : `${l.title} ${l.description} ${l.category} ${l.tags.join(
-            " "
-          )}`.toLowerCase().includes(q);
+        : `${l.title} ${l.description} ${l.category} ${l.tags.join(" ")} ${
+            l.goodFor?.join(" ") ?? ""
+          }`.toLowerCase().includes(q);
 
       const matchesTag = !tag
         ? true
@@ -204,7 +267,7 @@ export default function App() {
     });
   }, [query, selectedTag, lists]);
 
-  const featured = lists.slice(0, 2);
+  const featured = lists.slice(0, 3);
 
   /* -------- Checklist state -------- */
 
@@ -227,6 +290,12 @@ export default function App() {
     if (!active) return;
     localStorage.setItem(storageKey(active.id), JSON.stringify(checked));
   }, [checked, active?.id]);
+
+  function toggleTag(tag: string) {
+    setSelectedTag((prev) =>
+      prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+    );
+  }
 
   function toggleStep(i: number) {
     setChecked((prev) => {
@@ -302,11 +371,7 @@ export default function App() {
                 l={l}
                 selectedTag={selectedTag}
                 onOpen={setActiveId}
-                onTagClick={(tag) =>
-                  setSelectedTag((prev) =>
-                    prev.toLowerCase() === tag.toLowerCase() ? "" : tag
-                  )
-                }
+                onTagClick={toggleTag}
               />
             ))}
           </div>
@@ -323,11 +388,7 @@ export default function App() {
                 l={l}
                 selectedTag={selectedTag}
                 onOpen={setActiveId}
-                onTagClick={(tag) =>
-                  setSelectedTag((prev) =>
-                    prev.toLowerCase() === tag.toLowerCase() ? "" : tag
-                  )
-                }
+                onTagClick={toggleTag}
               />
             ))}
           </div>
@@ -341,6 +402,7 @@ export default function App() {
   const done = checked.filter(Boolean).length;
   const total = active.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const timeLabel = formatTime(active.timeMins);
 
   return (
     <>
@@ -356,6 +418,13 @@ export default function App() {
           <p>{active.description}</p>
 
           <p style={{ fontSize: 12, color: "#666" }}>{active.category}</p>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            {timeLabel ? <SmallPill text={`⏱ ${timeLabel}`} /> : null}
+            {active.difficulty ? <SmallPill text={`⚡ ${active.difficulty}`} /> : null}
+          </div>
+
+          <GoodForPills items={active.goodFor} />
 
           <TagPills
             tags={active.tags}
