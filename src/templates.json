@@ -3,6 +3,8 @@
     "id": "declutter-weekend",
     "title": "Declutter Weekend Reset",
     "description": "A practical, low-stress declutter you can actually finish.",
+    "category": "Home & Life Admin",
+    "tags": ["home", "declutter", "weekend", "calm"],
     "steps": [
       "Pick one small zone (one drawer, one bench, one corner)",
       "Set up 4 piles: Keep / Donate / Bin / Unsure",
@@ -18,6 +20,8 @@
     "id": "morning-routine-7yo",
     "title": "Morning Routine (7-year-old)",
     "description": "A calm, repeatable school-morning flow.",
+    "category": "Kids & Family",
+    "tags": ["kids", "school", "routine", "morning"],
     "steps": [
       "Night before: pack bag + choose clothes",
       "Wake up + 2-minute cuddle check-in",
