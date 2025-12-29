@@ -5,8 +5,11 @@ type Template = {
   id: string;
   title: string;
   description: string;
+  category: string;
+  tags: string[];
   steps: string[];
 };
+
 
 function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
