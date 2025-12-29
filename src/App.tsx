@@ -7,8 +7,12 @@ type Template = {
   description: string;
   category: string;
   tags: string[];
+  timeMins: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  goodFor: string[];
   steps: string[];
 };
+
 
 function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
