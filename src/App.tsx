@@ -10,7 +10,6 @@ type Template = {
   steps: string[];
 };
 
-
 function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
 }
@@ -42,6 +41,57 @@ function Header({
   );
 }
 
+function TagPills({ tags }: { tags: string[] }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+      {tags.slice(0, 8).map((tag) => (
+        <span
+          key={tag}
+          style={{
+            fontSize: 12,
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            color: "#444",
+          }}
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ListCard({
+  l,
+  onOpen,
+}: {
+  l: Template;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <div
+      className="card"
+      style={{ cursor: "pointer" }}
+      onClick={() => onOpen(l.id)}
+      role="button"
+      tabIndex={0}
+    >
+      <h2 style={{ marginTop: 0 }}>{l.title}</h2>
+      <p>{l.description}</p>
+
+      <p style={{ fontSize: 12, color: "#666", marginTop: 6, marginBottom: 8 }}>
+        {l.category} • {l.steps.length} steps
+      </p>
+
+      <TagPills tags={l.tags} />
+
+      <div className="cardAction">Open</div>
+    </div>
+  );
+}
+
 export default function App() {
   const lists = templates as Template[];
 
@@ -57,7 +107,9 @@ export default function App() {
     const q = query.trim().toLowerCase();
     if (!q) return lists;
     return lists.filter((l) => {
-      const hay = `${l.title} ${l.description}`.toLowerCase();
+      const hay = `${l.title} ${l.description} ${l.category} ${l.tags.join(
+        " "
+      )}`.toLowerCase();
       return hay.includes(q);
     });
   }, [query, lists]);
@@ -135,18 +187,7 @@ export default function App() {
 
           <div className="steps">
             {featured.map((l) => (
-              <div
-                key={l.id}
-                className="card"
-                style={{ cursor: "pointer" }}
-                onClick={() => setActiveId(l.id)}
-                role="button"
-                tabIndex={0}
-              >
-                <h2 style={{ marginTop: 0 }}>{l.title}</h2>
-                <p>{l.description}</p>
-                <div className="cardAction">{l.steps.length} steps • Open</div>
-              </div>
+              <ListCard key={l.id} l={l} onOpen={setActiveId} />
             ))}
           </div>
 
@@ -157,18 +198,7 @@ export default function App() {
 
           <div className="steps">
             {filtered.map((l) => (
-              <div
-                key={l.id}
-                className="card"
-                style={{ cursor: "pointer" }}
-                onClick={() => setActiveId(l.id)}
-                role="button"
-                tabIndex={0}
-              >
-                <h2 style={{ marginTop: 0 }}>{l.title}</h2>
-                <p>{l.description}</p>
-                <div className="cardAction">{l.steps.length} steps • Open</div>
-              </div>
+              <ListCard key={l.id} l={l} onOpen={setActiveId} />
             ))}
           </div>
         </div>
@@ -188,6 +218,12 @@ export default function App() {
         <div className="card">
           <h2 style={{ marginTop: 0 }}>{active.title}</h2>
           <p>{active.description}</p>
+
+          <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+            {active.category}
+          </p>
+
+          <TagPills tags={active.tags} />
 
           <div className="progressWrap">
             <div className="progressMeta">
