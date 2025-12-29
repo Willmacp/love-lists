@@ -10,10 +10,88 @@
       "Set up 4 piles: Keep / Donate / Bin / Unsure",
       "Set a 25-minute timer",
       "Do a quick surface sweep (no organising yet)",
-      "Empty one drawer/shelf and sort quickly",
-      "Put ‘Keep’ back neatly (good enough)",
+      "Empty one drawer or shelf and sort quickly",
+      "Put ‘Keep’ items back neatly (good enough)",
       "Put donate items by the door",
       "Stop at a natural break point and celebrate the win"
+    ]
+  },
+  {
+    "id": "clean-bathroom",
+    "title": "Clean the Bathroom (Quick + Proper)",
+    "description": "A realistic bathroom clean, start to finish.",
+    "category": "Home",
+    "tags": ["cleaning", "bathroom", "home"],
+    "steps": [
+      "Open window or turn on fan",
+      "Clear surfaces (sink, shower edge, floor)",
+      "Spray shower, bath, sink and toilet (leave to sit)",
+      "Wipe mirror and vanity",
+      "Scrub shower and bath",
+      "Clean toilet (bowl first, then seat and outside)",
+      "Wipe sink and taps",
+      "Rinse and dry surfaces",
+      "Quick floor mop",
+      "Put everything back"
+    ]
+  },
+  {
+    "id": "paint-kitchen-cupboards",
+    "title": "Paint Kitchen Cupboards",
+    "description": "Step-by-step cupboard painting without cutting corners.",
+    "category": "DIY & Renovation",
+    "tags": ["DIY", "painting", "kitchen", "weekend"],
+    "steps": [
+      "Choose paint system (primer + cabinet paint)",
+      "Empty cupboards and remove doors",
+      "Label doors and hinges",
+      "Clean all surfaces thoroughly (sugar soap)",
+      "Lightly sand doors and frames",
+      "Wipe down dust",
+      "Apply primer",
+      "Light sand once dry",
+      "Apply first coat of paint",
+      "Allow full drying time",
+      "Apply second coat",
+      "Cure fully before rehanging",
+      "Reattach doors and hardware"
+    ]
+  },
+  {
+    "id": "make-jam",
+    "title": "Make a Batch of Jam",
+    "description": "Simple home-made jam, no stress.",
+    "category": "Cooking & Food",
+    "tags": ["cooking", "preserving", "weekend", "food"],
+    "steps": [
+      "Choose fruit and recipe",
+      "Wash and prepare fruit",
+      "Sterilise jars and lids",
+      "Cook fruit with sugar",
+      "Test setting point",
+      "Remove from heat",
+      "Pour into jars carefully",
+      "Seal lids",
+      "Label and date jars",
+      "Clean up"
+    ]
+  },
+  {
+    "id": "toddler-bedtime",
+    "title": "Toddler Bedtime Routine",
+    "description": "A calm, predictable bedtime flow.",
+    "category": "Kids & Family",
+    "tags": ["toddler", "bedtime", "routine", "kids"],
+    "steps": [
+      "Tidy toys together (5-minute warning)",
+      "Bath time",
+      "Pyjamas on",
+      "Brush teeth",
+      "Quiet play or books",
+      "Story time",
+      "Cuddle and chat",
+      "Lights out",
+      "Quick check-in after 5–10 minutes if needed"
     ]
   },
   {
@@ -23,14 +101,89 @@
     "category": "Kids & Family",
     "tags": ["kids", "school", "routine", "morning"],
     "steps": [
-      "Night before: pack bag + choose clothes",
-      "Wake up + 2-minute cuddle check-in",
-      "Toilet + wash hands",
-      "Get dressed (clothes already chosen)",
+      "Night before: pack bag and choose clothes",
+      "Wake up and cuddle check-in",
+      "Toilet and wash hands",
+      "Get dressed",
       "Breakfast (same 2–3 options on rotation)",
-      "Brush teeth + hair",
-      "Shoes on + bag by the door",
-      "Final check: lunchbox + bottle + jacket/hat"
+      "Brush teeth and hair",
+      "Shoes on",
+      "Bag by the door",
+      "Final check: lunchbox, bottle, jumper"
+    ]
+  },
+  {
+    "id": "move-house",
+    "title": "Move House (Core Checklist)",
+    "description": "The essential steps to get through a house move.",
+    "category": "Life Events",
+    "tags": ["moving", "life admin", "stress"],
+    "steps": [
+      "Confirm moving date",
+      "Book removalist or hire vehicle",
+      "Start packing non-essentials",
+      "Notify utilities and internet",
+      "Change address with key organisations",
+      "Pack essentials box",
+      "Clean old place",
+      "Pick up keys to new place",
+      "Move day",
+      "Unpack essentials first"
+    ]
+  },
+  {
+    "id": "wedding-planning-overview",
+    "title": "Plan a Wedding – Overview",
+    "description": "High-level wedding planning, start to finish.",
+    "category": "Life Events",
+    "tags": ["wedding", "planning", "life event"],
+    "steps": [
+      "Set rough budget",
+      "Agree on guest size and style",
+      "Choose date or season",
+      "Book venue",
+      "Confirm celebrant/officiant",
+      "Book photographer",
+      "Book catering",
+      "Choose attire",
+      "Send invitations",
+      "Finalise run sheet",
+      "Get married 🎉"
+    ]
+  },
+  {
+    "id": "wedding-venue",
+    "title": "Plan a Wedding – Venue & Vendors",
+    "description": "Lock in the big-ticket wedding items.",
+    "category": "Life Events",
+    "tags": ["wedding", "vendors", "planning"],
+    "steps": [
+      "Shortlist venues",
+      "Visit top choices",
+      "Confirm availability",
+      "Sign venue contract",
+      "Book celebrant",
+      "Book photographer/videographer",
+      "Book catering",
+      "Confirm music/entertainment"
+    ]
+  },
+  {
+    "id": "wedding-admin",
+    "title": "Plan a Wedding – Admin & Details",
+    "description": "All the fiddly wedding admin in one place.",
+    "category": "Life Events",
+    "tags": ["wedding", "admin", "planning"],
+    "steps": [
+      "Create guest list",
+      "Send save-the-dates",
+      "Send invitations",
+      "Track RSVPs",
+      "Plan seating",
+      "Confirm dietary requirements",
+      "Final vendor confirmations",
+      "Prepare run sheet",
+      "Pack wedding-day essentials"
     ]
   }
 ]
