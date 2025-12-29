@@ -12,11 +12,38 @@ function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
 }
 
+function Header({
+  mode,
+  onBack,
+}: {
+  mode: "explore" | "run";
+  onBack?: () => void;
+}) {
+  return (
+    <div className="headerBar">
+      <div className="headerInner">
+        <div>
+          <div className="brandTitle">Love Lists</div>
+          <div className="brandSub">Life, thought through.</div>
+        </div>
+
+        {mode === "run" ? (
+          <button className="pill" onClick={onBack}>
+            ← Explore
+          </button>
+        ) : (
+          <div className="pill">Demo</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const lists = templates as Template[];
 
   const [query, setQuery] = useState("");
-  const [activeId, setActiveId] = useState<string>(""); // empty = Explore view
+  const [activeId, setActiveId] = useState<string>(""); // empty = Explore
 
   const active = useMemo(
     () => lists.find((l) => l.id === activeId) ?? null,
@@ -32,10 +59,12 @@ export default function App() {
     });
   }, [query, lists]);
 
-  // checklist state for active list
+  // Featured: first 2 lists (simple for now)
+  const featured = useMemo(() => lists.slice(0, 2), [lists]);
+
+  // checklist state
   const [checked, setChecked] = useState<boolean[]>([]);
 
-  // Load progress when active changes
   useEffect(() => {
     if (!active) return;
     const raw = localStorage.getItem(storageKey(active.id));
@@ -45,13 +74,12 @@ export default function App() {
         setChecked(active.steps.map((_, i) => Boolean(parsed[i])));
         return;
       } catch {
-        // fallthrough
+        // ignore
       }
     }
     setChecked(active.steps.map(() => false));
   }, [active?.id]);
 
-  // Save progress
   useEffect(() => {
     if (!active) return;
     localStorage.setItem(storageKey(active.id), JSON.stringify(checked));
@@ -70,116 +98,137 @@ export default function App() {
     setChecked(active.steps.map(() => false));
   }
 
-  // ---- Explore view ----
+  // ---------------- Explore ----------------
   if (!active) {
     return (
-      <div className="container">
-        <h1>Love Lists</h1>
-        <p>Practical plans for real life. Pick a list to start.</p>
+      <>
+        <Header mode="explore" />
+        <div className="container">
+          <div className="card">
+            <p style={{ marginTop: 0 }}>
+              Practical planning lists for everyday life and big moments.
+            </p>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search (declutter, school, wedding...)"
+              style={{
+                width: "100%",
+                padding: "12px 12px",
+                borderRadius: 12,
+                border: "1px solid #e5e7eb",
+                fontSize: 14,
+              }}
+            />
+            <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+              Showing {filtered.length} of {lists.length}
+            </p>
+          </div>
 
-        <div className="card">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search (declutter, school, wedding...)"
-            style={{
-              width: "100%",
-              padding: "12px 12px",
-              borderRadius: 12,
-              border: "1px solid #e5e7eb",
-              fontSize: 14
-            }}
-          />
-          <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-            Showing {filtered.length} of {lists.length}
-          </p>
-        </div>
+          <div className="sectionHead">
+            <h3>Featured</h3>
+            <div className="hint">Tap to open</div>
+          </div>
 
-        <div className="steps" style={{ marginTop: 16 }}>
-          {filtered.map((l) => (
-            <div
-              key={l.id}
-              className="card"
-              style={{ cursor: "pointer" }}
-              onClick={() => setActiveId(l.id)}
-              role="button"
-              tabIndex={0}
-            >
-              <h2 style={{ marginTop: 0 }}>{l.title}</h2>
-              <p>{l.description}</p>
-              <p style={{ fontSize: 12, color: "#666", marginBottom: 0 }}>
-                {l.steps.length} steps • Tap to open
-              </p>
-            </div>
-          ))}
+          <div className="steps">
+            {featured.map((l) => (
+              <div
+                key={l.id}
+                className="card"
+                style={{ cursor: "pointer" }}
+                onClick={() => setActiveId(l.id)}
+                role="button"
+                tabIndex={0}
+              >
+                <h2 style={{ marginTop: 0 }}>{l.title}</h2>
+                <p>{l.description}</p>
+                <div className="cardAction">{l.steps.length} steps • Open</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="sectionHead">
+            <h3>All lists</h3>
+            <div className="hint">Build your library over time</div>
+          </div>
+
+          <div className="steps">
+            {filtered.map((l) => (
+              <div
+                key={l.id}
+                className="card"
+                style={{ cursor: "pointer" }}
+                onClick={() => setActiveId(l.id)}
+                role="button"
+                tabIndex={0}
+              >
+                <h2 style={{ marginTop: 0 }}>{l.title}</h2>
+                <p>{l.description}</p>
+                <div className="cardAction">{l.steps.length} steps • Open</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // ---- Runner view ----
+  // ---------------- Runner ----------------
   const done = checked.filter(Boolean).length;
   const total = active.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="container">
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button
-          onClick={() => setActiveId("")}
-          style={{ background: "#5f809b" }}
-        >
-          ← Explore
-        </button>
-        <div style={{ fontWeight: 800 }}>Love Lists</div>
-      </div>
+    <>
+      <Header mode="run" onBack={() => setActiveId("")} />
+      <div className="container">
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>{active.title}</h2>
+          <p>{active.description}</p>
 
-      <div className="card" style={{ marginTop: 14 }}>
-        <h2 style={{ marginTop: 0 }}>{active.title}</h2>
-        <p>{active.description}</p>
-
-        <div className="progressWrap">
-          <div className="progressMeta">
-            Progress: {done}/{total} ({pct}%)
-          </div>
-          <div className="progressBar">
-            <div style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-
-        <div className="steps">
-          {active.steps.map((step, i) => (
-            <div
-              key={i}
-              className={`stepRow ${checked[i] ? "done" : ""}`}
-              onClick={() => toggleStep(i)}
-              role="button"
-              tabIndex={0}
-            >
-              <input
-                type="checkbox"
-                checked={checked[i] || false}
-                onChange={() => toggleStep(i)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div>{step}</div>
+          <div className="progressWrap">
+            <div className="progressMeta">
+              Progress: {done}/{total} ({pct}%)
             </div>
-          ))}
-        </div>
+            <div className="progressBar">
+              <div style={{ width: `${pct}%` }} />
+            </div>
+          </div>
 
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-          <button onClick={reset} style={{ background: "#5f809b" }}>
-            Reset
-          </button>
-          <button disabled style={{ opacity: 0.7 }}>
-            Use this list
-          </button>
-        </div>
+          <div className="steps">
+            {active.steps.map((step, i) => (
+              <div
+                key={i}
+                className={`stepRow ${checked[i] ? "done" : ""}`}
+                onClick={() => toggleStep(i)}
+                role="button"
+                tabIndex={0}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked[i] || false}
+                  onChange={() => toggleStep(i)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div>{step}</div>
+              </div>
+            ))}
+          </div>
 
-        <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-          ✅ Progress saves automatically on this device.
-        </p>
+          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+            <button onClick={reset} style={{ background: "#5f809b" }}>
+              Reset
+            </button>
+            <button disabled style={{ opacity: 0.7 }}>
+              Use this list
+            </button>
+          </div>
+
+          <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+            ✅ Progress saves automatically on this device.
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
