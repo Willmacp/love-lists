@@ -311,6 +311,54 @@ function ListCard({
   );
 }
 
+/* ---------------- Accordion Category Section ---------------- */
+
+function CategoryAccordion({
+  title,
+  count,
+  defaultOpen,
+  children,
+}: {
+  title: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 14,
+        background: "#fff",
+        padding: 10,
+        marginTop: 12,
+      }}
+    >
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10,
+          fontWeight: 800,
+          color: "#222",
+          padding: "6px 6px",
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ fontSize: 12, color: "#666", fontWeight: 700 }}>
+          {count} list{count === 1 ? "" : "s"} ▾
+        </span>
+      </summary>
+
+      <div style={{ marginTop: 10 }}>{children}</div>
+    </details>
+  );
+}
+
 /* ---------------- App ---------------- */
 
 export default function App() {
@@ -321,7 +369,6 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [activeId, setActiveId] = useState("");
 
-  // saved + recent state (synced to localStorage)
   const [savedIds, setSavedIds] = useState<string[]>(() =>
     readStringArray(SAVED_KEY)
   );
@@ -611,17 +658,20 @@ export default function App() {
 
           <div className="sectionHead">
             <h3>Browse by category</h3>
-            <div className="hint">Only showing matches</div>
+            <div className="hint">Tap to expand</div>
           </div>
 
           {groupedByCategory.map(([cat, arr]) => (
-            <div key={cat}>
-              <div className="sectionHead" style={{ marginTop: 18 }}>
-                <h3>{cat}</h3>
-                <div className="hint">
-                  {arr.length} list{arr.length === 1 ? "" : "s"}
-                </div>
-              </div>
+            <CategoryAccordion
+              key={cat}
+              title={cat}
+              count={arr.length}
+              defaultOpen={
+                selectedCategory
+                  ? cat.toLowerCase() === selectedCategory.toLowerCase()
+                  : false
+              }
+            >
               <div className="steps">
                 {arr.map((l) => (
                   <ListCard
@@ -635,7 +685,7 @@ export default function App() {
                   />
                 ))}
               </div>
-            </div>
+            </CategoryAccordion>
           ))}
         </div>
       </>
