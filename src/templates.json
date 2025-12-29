@@ -1,0 +1,32 @@
+[
+  {
+    "id": "declutter-weekend",
+    "title": "Declutter Weekend Reset",
+    "description": "A practical, low-stress declutter you can actually finish.",
+    "steps": [
+      "Pick one small zone (one drawer, one bench, one corner)",
+      "Set up 4 piles: Keep / Donate / Bin / Unsure",
+      "Set a 25-minute timer",
+      "Do a quick surface sweep (no organising yet)",
+      "Empty one drawer/shelf and sort quickly",
+      "Put ‘Keep’ back neatly (good enough)",
+      "Put donate items by the door",
+      "Stop at a natural break point and celebrate the win"
+    ]
+  },
+  {
+    "id": "morning-routine-7yo",
+    "title": "Morning Routine (7-year-old)",
+    "description": "A calm, repeatable school-morning flow.",
+    "steps": [
+      "Night before: pack bag + choose clothes",
+      "Wake up + 2-minute cuddle check-in",
+      "Toilet + wash hands",
+      "Get dressed (clothes already chosen)",
+      "Breakfast (same 2–3 options on rotation)",
+      "Brush teeth + hair",
+      "Shoes on + bag by the door",
+      "Final check: lunchbox + bottle + jacket/hat"
+    ]
+  }
+]
