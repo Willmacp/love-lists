@@ -107,3 +107,72 @@ button {
   opacity: 0.7;
   text-decoration: line-through;
 }
+/* Sticky header */
+.headerBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, #003535, #5f809b);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.headerInner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brandTitle {
+  font-weight: 900;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.brandSub {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.pill {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+
+/* Section headings */
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.sectionHead h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #111;
+}
+
+.sectionHead .hint {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Card button look */
+.cardAction {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #003535;
+  font-weight: 800;
+}
