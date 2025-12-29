@@ -23,9 +23,7 @@ function formatTime(mins: number) {
   if (!mins || mins <= 0) return "";
   if (mins < 60) return `${mins} mins`;
   const hrs = Math.round((mins / 60) * 10) / 10; // 1 decimal
-  // If it’s a whole hour, don’t show .0
-  const nice = Number.isInteger(hrs) ? `${hrs}` : `${hrs}`;
-  return `${nice} hrs`;
+  return `${Number.isInteger(hrs) ? hrs : hrs} hrs`;
 }
 
 /* ---------------- Header ---------------- */
@@ -82,9 +80,7 @@ function SmallPill({
     fontWeight: isSelected ? 800 : 600,
   };
 
-  if (!asButton) {
-    return <span style={style}>{text}</span>;
-  }
+  if (!asButton) return <span style={style}>{text}</span>;
 
   return (
     <button
@@ -152,6 +148,34 @@ function GoodForPills({ items }: { items: string[] }) {
   );
 }
 
+function CategoryChips({
+  categories,
+  selectedCategory,
+  onSelect,
+}: {
+  categories: string[];
+  selectedCategory: string;
+  onSelect: (cat: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+      <SmallPill
+        text="All"
+        isSelected={selectedCategory === ""}
+        onClick={() => onSelect("")}
+      />
+      {categories.map((c) => (
+        <SmallPill
+          key={c}
+          text={c}
+          isSelected={selectedCategory === c}
+          onClick={() => onSelect(c)}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ---------------- List Card ---------------- */
 
 function ListCard({
@@ -165,7 +189,7 @@ function ListCard({
   onOpen: (id: string) => void;
   onTagClick: (tag: string) => void;
 }) {
-  // Read progress for this list (safe fallback)
+  // Read progress for this list
   let done = 0;
   try {
     const raw = localStorage.getItem(storageKey(l.id));
@@ -178,7 +202,6 @@ function ListCard({
   }
   const total = l.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
-
   const timeLabel = formatTime(l.timeMins);
 
   return (
@@ -205,7 +228,7 @@ function ListCard({
 
       <TagPills tags={l.tags} selectedTag={selectedTag} onTagClick={onTagClick} />
 
-      {/* Mini progress on the card */}
+      {/* Mini progress */}
       <div style={{ marginTop: 12 }}>
         <div style={{ fontSize: 12, color: "#444", fontWeight: 800 }}>
           {done}/{total} done ({pct}%)
@@ -241,16 +264,24 @@ export default function App() {
 
   const [query, setQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
-  const [activeId, setActiveId] = useState(""); // empty = Explore
+  const [selectedCategory, setSelectedCategory] = useState(""); // NEW
+  const [activeId, setActiveId] = useState("");
 
   const active = useMemo(
     () => lists.find((l) => l.id === activeId) ?? null,
     [activeId, lists]
   );
 
+  const categories = useMemo(() => {
+    const uniq = Array.from(new Set(lists.map((l) => l.category).filter(Boolean)));
+    uniq.sort((a, b) => a.localeCompare(b));
+    return uniq;
+  }, [lists]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const tag = selectedTag.trim().toLowerCase();
+    const cat = selectedCategory.trim().toLowerCase();
 
     return lists.filter((l) => {
       const matchesQuery = !q
@@ -263,13 +294,35 @@ export default function App() {
         ? true
         : l.tags.some((t) => t.toLowerCase() === tag);
 
-      return matchesQuery && matchesTag;
+      const matchesCategory = !cat ? true : l.category.toLowerCase() === cat;
+
+      return matchesQuery && matchesTag && matchesCategory;
     });
-  }, [query, selectedTag, lists]);
+  }, [query, selectedTag, selectedCategory, lists]);
 
-  const featured = lists.slice(0, 3);
+  const featured = useMemo(() => lists.slice(0, 3), [lists]);
 
-  /* -------- Checklist state -------- */
+  const featuredFiltered = useMemo(() => {
+    // Featured but respecting current filters (tag/category/search)
+    const ids = new Set(featured.map((x) => x.id));
+    return filtered.filter((l) => ids.has(l.id));
+  }, [featured, filtered]);
+
+  const groupedByCategory = useMemo(() => {
+    const map = new Map<string, Template[]>();
+    for (const l of filtered) {
+      const k = l.category || "Other";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(l);
+    }
+    // sort lists in each category by title
+    for (const [k, arr] of map.entries()) {
+      arr.sort((a, b) => a.title.localeCompare(b.title));
+      map.set(k, arr);
+    }
+    // sort categories by name
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filtered]);
 
   const [checked, setChecked] = useState<boolean[]>([]);
 
@@ -335,63 +388,97 @@ export default function App() {
               }}
             />
 
+            <CategoryChips
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
+
             <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
               Showing {filtered.length} of {lists.length}
             </p>
 
-            {selectedTag && (
-              <div style={{ marginTop: 8 }}>
-                <strong style={{ fontSize: 12 }}>Filter:</strong>{" "}
-                <button
-                  onClick={() => setSelectedTag("")}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  {selectedTag} ✕
-                </button>
+            {(selectedTag || selectedCategory) && (
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {selectedCategory && (
+                  <button
+                    onClick={() => setSelectedCategory("")}
+                    style={{
+                      fontSize: 12,
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Category: {selectedCategory} ✕
+                  </button>
+                )}
+                {selectedTag && (
+                  <button
+                    onClick={() => setSelectedTag("")}
+                    style={{
+                      fontSize: 12,
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Tag: {selectedTag} ✕
+                  </button>
+                )}
               </div>
             )}
           </div>
 
           <div className="sectionHead">
             <h3>Featured</h3>
-            <div className="hint">Tap to open</div>
+            <div className="hint">Curated starters</div>
           </div>
 
           <div className="steps">
-            {featured.map((l) => (
-              <ListCard
-                key={l.id}
-                l={l}
-                selectedTag={selectedTag}
-                onOpen={setActiveId}
-                onTagClick={toggleTag}
-              />
-            ))}
+            {(featuredFiltered.length ? featuredFiltered : featured)
+              .slice(0, 3)
+              .map((l) => (
+                <ListCard
+                  key={l.id}
+                  l={l}
+                  selectedTag={selectedTag}
+                  onOpen={setActiveId}
+                  onTagClick={toggleTag}
+                />
+              ))}
           </div>
 
           <div className="sectionHead">
-            <h3>All lists</h3>
-            <div className="hint">Browse everything</div>
+            <h3>Browse by category</h3>
+            <div className="hint">Only showing matches</div>
           </div>
 
-          <div className="steps">
-            {filtered.map((l) => (
-              <ListCard
-                key={l.id}
-                l={l}
-                selectedTag={selectedTag}
-                onOpen={setActiveId}
-                onTagClick={toggleTag}
-              />
-            ))}
-          </div>
+          {groupedByCategory.map(([cat, arr]) => (
+            <div key={cat}>
+              <div className="sectionHead" style={{ marginTop: 18 }}>
+                <h3>{cat}</h3>
+                <div className="hint">{arr.length} list{arr.length === 1 ? "" : "s"}</div>
+              </div>
+              <div className="steps">
+                {arr.map((l) => (
+                  <ListCard
+                    key={l.id}
+                    l={l}
+                    selectedTag={selectedTag}
+                    onOpen={setActiveId}
+                    onTagClick={toggleTag}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </>
     );
@@ -406,12 +493,7 @@ export default function App() {
 
   return (
     <>
-      <Header
-        mode="run"
-        onBack={() => {
-          setActiveId("");
-        }}
-      />
+      <Header mode="run" onBack={() => setActiveId("")} />
       <div className="container">
         <div className="card">
           <h2 style={{ marginTop: 0 }}>{active.title}</h2>
