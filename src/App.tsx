@@ -14,6 +14,8 @@ function storageKey(listId: string) {
   return `lovelists_progress_${listId}`;
 }
 
+/* ---------------- Header ---------------- */
+
 function Header({
   mode,
   onBack,
@@ -41,34 +43,64 @@ function Header({
   );
 }
 
-function TagPills({ tags }: { tags: string[] }) {
+/* ---------------- Tag Pills ---------------- */
+
+function TagPills({
+  tags,
+  selectedTag,
+  onTagClick,
+}: {
+  tags: string[];
+  selectedTag: string;
+  onTagClick: (tag: string) => void;
+}) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-      {tags.slice(0, 8).map((tag) => (
-        <span
-          key={tag}
-          style={{
-            fontSize: 12,
-            padding: "6px 10px",
-            borderRadius: 999,
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-            color: "#444",
-          }}
-        >
-          {tag}
-        </span>
-      ))}
+      {tags.slice(0, 8).map((tag) => {
+        const isSelected = selectedTag.toLowerCase() === tag.toLowerCase();
+
+        return (
+          <button
+            key={tag}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTagClick(tag);
+            }}
+            aria-pressed={isSelected}
+            style={{
+              fontSize: 12,
+              padding: "6px 10px",
+              borderRadius: 999,
+              border: isSelected
+                ? "1px solid #003535"
+                : "1px solid #e5e7eb",
+              background: isSelected ? "rgba(0,53,53,0.08)" : "#fff",
+              color: "#444",
+              cursor: "pointer",
+              fontWeight: isSelected ? 700 : 500,
+            }}
+          >
+            {tag}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
+/* ---------------- List Card ---------------- */
+
 function ListCard({
   l,
+  selectedTag,
   onOpen,
+  onTagClick,
 }: {
   l: Template;
+  selectedTag: string;
   onOpen: (id: string) => void;
+  onTagClick: (tag: string) => void;
 }) {
   return (
     <div
@@ -81,22 +113,29 @@ function ListCard({
       <h2 style={{ marginTop: 0 }}>{l.title}</h2>
       <p>{l.description}</p>
 
-      <p style={{ fontSize: 12, color: "#666", marginTop: 6, marginBottom: 8 }}>
+      <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
         {l.category} • {l.steps.length} steps
       </p>
 
-      <TagPills tags={l.tags} />
+      <TagPills
+        tags={l.tags}
+        selectedTag={selectedTag}
+        onTagClick={onTagClick}
+      />
 
       <div className="cardAction">Open</div>
     </div>
   );
 }
 
+/* ---------------- App ---------------- */
+
 export default function App() {
   const lists = templates as Template[];
 
   const [query, setQuery] = useState("");
-  const [activeId, setActiveId] = useState<string>(""); // empty = Explore
+  const [selectedTag, setSelectedTag] = useState("");
+  const [activeId, setActiveId] = useState(""); // empty = Explore
 
   const active = useMemo(
     () => lists.find((l) => l.id === activeId) ?? null,
@@ -105,19 +144,27 @@ export default function App() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return lists;
+    const tag = selectedTag.trim().toLowerCase();
+
     return lists.filter((l) => {
-      const hay = `${l.title} ${l.description} ${l.category} ${l.tags.join(
-        " "
-      )}`.toLowerCase();
-      return hay.includes(q);
+      const matchesQuery = !q
+        ? true
+        : `${l.title} ${l.description} ${l.category} ${l.tags.join(
+            " "
+          )}`.toLowerCase().includes(q);
+
+      const matchesTag = !tag
+        ? true
+        : l.tags.some((t) => t.toLowerCase() === tag);
+
+      return matchesQuery && matchesTag;
     });
-  }, [query, lists]);
+  }, [query, selectedTag, lists]);
 
-  // Featured: first 2 lists (simple for now)
-  const featured = useMemo(() => lists.slice(0, 2), [lists]);
+  const featured = lists.slice(0, 2);
 
-  // checklist state
+  /* -------- Checklist state -------- */
+
   const [checked, setChecked] = useState<boolean[]>([]);
 
   useEffect(() => {
@@ -128,9 +175,7 @@ export default function App() {
         const parsed = JSON.parse(raw) as boolean[];
         setChecked(active.steps.map((_, i) => Boolean(parsed[i])));
         return;
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
     setChecked(active.steps.map(() => false));
   }, [active?.id]);
@@ -153,7 +198,8 @@ export default function App() {
     setChecked(active.steps.map(() => false));
   }
 
-  // ---------------- Explore ----------------
+  /* ---------------- Explore ---------------- */
+
   if (!active) {
     return (
       <>
@@ -163,21 +209,42 @@ export default function App() {
             <p style={{ marginTop: 0 }}>
               Practical planning lists for everyday life and big moments.
             </p>
+
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search (declutter, school, wedding...)"
               style={{
                 width: "100%",
-                padding: "12px 12px",
+                padding: "12px",
                 borderRadius: 12,
                 border: "1px solid #e5e7eb",
                 fontSize: 14,
               }}
             />
+
             <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
               Showing {filtered.length} of {lists.length}
             </p>
+
+            {selectedTag && (
+              <div style={{ marginTop: 8 }}>
+                <strong style={{ fontSize: 12 }}>Filter:</strong>{" "}
+                <button
+                  onClick={() => setSelectedTag("")}
+                  style={{
+                    fontSize: 12,
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    border: "1px solid #e5e7eb",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  {selectedTag} ✕
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="sectionHead">
@@ -187,18 +254,38 @@ export default function App() {
 
           <div className="steps">
             {featured.map((l) => (
-              <ListCard key={l.id} l={l} onOpen={setActiveId} />
+              <ListCard
+                key={l.id}
+                l={l}
+                selectedTag={selectedTag}
+                onOpen={setActiveId}
+                onTagClick={(tag) =>
+                  setSelectedTag((prev) =>
+                    prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+                  )
+                }
+              />
             ))}
           </div>
 
           <div className="sectionHead">
             <h3>All lists</h3>
-            <div className="hint">Build your library over time</div>
+            <div className="hint">Browse everything</div>
           </div>
 
           <div className="steps">
             {filtered.map((l) => (
-              <ListCard key={l.id} l={l} onOpen={setActiveId} />
+              <ListCard
+                key={l.id}
+                l={l}
+                selectedTag={selectedTag}
+                onOpen={setActiveId}
+                onTagClick={(tag) =>
+                  setSelectedTag((prev) =>
+                    prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+                  )
+                }
+              />
             ))}
           </div>
         </div>
@@ -206,24 +293,35 @@ export default function App() {
     );
   }
 
-  // ---------------- Runner ----------------
+  /* ---------------- Runner ---------------- */
+
   const done = checked.filter(Boolean).length;
   const total = active.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
     <>
-      <Header mode="run" onBack={() => setActiveId("")} />
+      <Header
+        mode="run"
+        onBack={() => {
+          setActiveId("");
+        }}
+      />
       <div className="container">
         <div className="card">
           <h2 style={{ marginTop: 0 }}>{active.title}</h2>
           <p>{active.description}</p>
 
-          <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
-            {active.category}
-          </p>
+          <p style={{ fontSize: 12, color: "#666" }}>{active.category}</p>
 
-          <TagPills tags={active.tags} />
+          <TagPills
+            tags={active.tags}
+            selectedTag={selectedTag}
+            onTagClick={(tag) => {
+              setActiveId("");
+              setSelectedTag(tag);
+            }}
+          />
 
           <div className="progressWrap">
             <div className="progressMeta">
@@ -240,12 +338,10 @@ export default function App() {
                 key={i}
                 className={`stepRow ${checked[i] ? "done" : ""}`}
                 onClick={() => toggleStep(i)}
-                role="button"
-                tabIndex={0}
               >
                 <input
                   type="checkbox"
-                  checked={checked[i] || false}
+                  checked={checked[i]}
                   onChange={() => toggleStep(i)}
                   onClick={(e) => e.stopPropagation()}
                 />
