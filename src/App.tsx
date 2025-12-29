@@ -15,15 +15,51 @@ type Template = {
   steps: string[];
 };
 
-function storageKey(listId: string) {
+function progressKey(listId: string) {
   return `lovelists_progress_${listId}`;
+}
+
+const SAVED_KEY = "lovelists_saved";
+const RECENT_KEY = "lovelists_recent";
+const RECENT_MAX = 8;
+
+function readStringArray(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((x) => typeof x === "string");
+  } catch {
+    return [];
+  }
+}
+
+function writeStringArray(key: string, arr: string[]) {
+  localStorage.setItem(key, JSON.stringify(arr));
 }
 
 function formatTime(mins: number) {
   if (!mins || mins <= 0) return "";
   if (mins < 60) return `${mins} mins`;
-  const hrs = Math.round((mins / 60) * 10) / 10; // 1 decimal
+  const hrs = Math.round((mins / 60) * 10) / 10;
   return `${Number.isInteger(hrs) ? hrs : hrs} hrs`;
+}
+
+function getProgress(list: Template) {
+  let done = 0;
+  try {
+    const raw = localStorage.getItem(progressKey(list.id));
+    if (raw) {
+      const arr = JSON.parse(raw) as boolean[];
+      done = Array.isArray(arr) ? arr.filter(Boolean).length : 0;
+    }
+  } catch {
+    done = 0;
+  }
+  const total = list.steps.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return { done, total, pct };
 }
 
 /* ---------------- Header ---------------- */
@@ -183,25 +219,17 @@ function ListCard({
   selectedTag,
   onOpen,
   onTagClick,
+  isSaved,
+  onToggleSaved,
 }: {
   l: Template;
   selectedTag: string;
   onOpen: (id: string) => void;
   onTagClick: (tag: string) => void;
+  isSaved: boolean;
+  onToggleSaved: (id: string) => void;
 }) {
-  // Read progress for this list
-  let done = 0;
-  try {
-    const raw = localStorage.getItem(storageKey(l.id));
-    if (raw) {
-      const arr = JSON.parse(raw) as boolean[];
-      done = arr.filter(Boolean).length;
-    }
-  } catch {
-    done = 0;
-  }
-  const total = l.steps.length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
+  const { done, total, pct } = getProgress(l);
   const timeLabel = formatTime(l.timeMins);
 
   return (
@@ -212,7 +240,33 @@ function ListCard({
       role="button"
       tabIndex={0}
     >
-      <h2 style={{ marginTop: 0 }}>{l.title}</h2>
+      <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ marginTop: 0, marginBottom: 6 }}>{l.title}</h2>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSaved(l.id);
+          }}
+          aria-label={isSaved ? "Unsave list" : "Save list"}
+          title={isSaved ? "Saved" : "Save"}
+          style={{
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            borderRadius: 12,
+            padding: "8px 10px",
+            cursor: "pointer",
+            fontSize: 16,
+            lineHeight: 1,
+          }}
+        >
+          {isSaved ? "★" : "☆"}
+        </button>
+      </div>
+
       <p>{l.description}</p>
 
       <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
@@ -264,8 +318,16 @@ export default function App() {
 
   const [query, setQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(""); // NEW
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [activeId, setActiveId] = useState("");
+
+  // saved + recent state (synced to localStorage)
+  const [savedIds, setSavedIds] = useState<string[]>(() =>
+    readStringArray(SAVED_KEY)
+  );
+  const [recentIds, setRecentIds] = useState<string[]>(() =>
+    readStringArray(RECENT_KEY)
+  );
 
   const active = useMemo(
     () => lists.find((l) => l.id === activeId) ?? null,
@@ -303,7 +365,6 @@ export default function App() {
   const featured = useMemo(() => lists.slice(0, 3), [lists]);
 
   const featuredFiltered = useMemo(() => {
-    // Featured but respecting current filters (tag/category/search)
     const ids = new Set(featured.map((x) => x.id));
     return filtered.filter((l) => ids.has(l.id));
   }, [featured, filtered]);
@@ -315,20 +376,63 @@ export default function App() {
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(l);
     }
-    // sort lists in each category by title
     for (const [k, arr] of map.entries()) {
       arr.sort((a, b) => a.title.localeCompare(b.title));
       map.set(k, arr);
     }
-    // sort categories by name
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
+
+  const savedLists = useMemo(() => {
+    const set = new Set(savedIds);
+    return lists.filter((l) => set.has(l.id));
+  }, [savedIds, lists]);
+
+  const recentLists = useMemo(() => {
+    const map = new Map(lists.map((l) => [l.id, l]));
+    return recentIds
+      .map((id) => map.get(id))
+      .filter(Boolean)
+      .slice(0, RECENT_MAX) as Template[];
+  }, [recentIds, lists]);
+
+  function toggleTag(tag: string) {
+    setSelectedTag((prev) =>
+      prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+    );
+  }
+
+  function toggleSaved(id: string) {
+    setSavedIds((prev) => {
+      const set = new Set(prev);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      const next = Array.from(set);
+      writeStringArray(SAVED_KEY, next);
+      return next;
+    });
+  }
+
+  function addRecent(id: string) {
+    setRecentIds((prev) => {
+      const next = [id, ...prev.filter((x) => x !== id)].slice(0, RECENT_MAX);
+      writeStringArray(RECENT_KEY, next);
+      return next;
+    });
+  }
+
+  function openList(id: string) {
+    setActiveId(id);
+    addRecent(id);
+  }
+
+  /* -------- Checklist state -------- */
 
   const [checked, setChecked] = useState<boolean[]>([]);
 
   useEffect(() => {
     if (!active) return;
-    const raw = localStorage.getItem(storageKey(active.id));
+    const raw = localStorage.getItem(progressKey(active.id));
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as boolean[];
@@ -341,14 +445,8 @@ export default function App() {
 
   useEffect(() => {
     if (!active) return;
-    localStorage.setItem(storageKey(active.id), JSON.stringify(checked));
+    localStorage.setItem(progressKey(active.id), JSON.stringify(checked));
   }, [checked, active?.id]);
-
-  function toggleTag(tag: string) {
-    setSelectedTag((prev) =>
-      prev.toLowerCase() === tag.toLowerCase() ? "" : tag
-    );
-  }
 
   function toggleStep(i: number) {
     setChecked((prev) => {
@@ -366,6 +464,9 @@ export default function App() {
   /* ---------------- Explore ---------------- */
 
   if (!active) {
+    const showSaved = savedLists.length > 0;
+    const showRecent = recentLists.length > 0;
+
     return (
       <>
         <Header mode="explore" />
@@ -399,7 +500,14 @@ export default function App() {
             </p>
 
             {(selectedTag || selectedCategory) && (
-              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div
+                style={{
+                  marginTop: 8,
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
                 {selectedCategory && (
                   <button
                     onClick={() => setSelectedCategory("")}
@@ -436,6 +544,50 @@ export default function App() {
             )}
           </div>
 
+          {showSaved && (
+            <>
+              <div className="sectionHead">
+                <h3>Saved</h3>
+                <div className="hint">Your favourites</div>
+              </div>
+              <div className="steps">
+                {savedLists.map((l) => (
+                  <ListCard
+                    key={l.id}
+                    l={l}
+                    selectedTag={selectedTag}
+                    onOpen={openList}
+                    onTagClick={toggleTag}
+                    isSaved={savedIds.includes(l.id)}
+                    onToggleSaved={toggleSaved}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {showRecent && (
+            <>
+              <div className="sectionHead">
+                <h3>Recent</h3>
+                <div className="hint">Pick up where you left off</div>
+              </div>
+              <div className="steps">
+                {recentLists.map((l) => (
+                  <ListCard
+                    key={l.id}
+                    l={l}
+                    selectedTag={selectedTag}
+                    onOpen={openList}
+                    onTagClick={toggleTag}
+                    isSaved={savedIds.includes(l.id)}
+                    onToggleSaved={toggleSaved}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
           <div className="sectionHead">
             <h3>Featured</h3>
             <div className="hint">Curated starters</div>
@@ -449,8 +601,10 @@ export default function App() {
                   key={l.id}
                   l={l}
                   selectedTag={selectedTag}
-                  onOpen={setActiveId}
+                  onOpen={openList}
                   onTagClick={toggleTag}
+                  isSaved={savedIds.includes(l.id)}
+                  onToggleSaved={toggleSaved}
                 />
               ))}
           </div>
@@ -464,7 +618,9 @@ export default function App() {
             <div key={cat}>
               <div className="sectionHead" style={{ marginTop: 18 }}>
                 <h3>{cat}</h3>
-                <div className="hint">{arr.length} list{arr.length === 1 ? "" : "s"}</div>
+                <div className="hint">
+                  {arr.length} list{arr.length === 1 ? "" : "s"}
+                </div>
               </div>
               <div className="steps">
                 {arr.map((l) => (
@@ -472,8 +628,10 @@ export default function App() {
                     key={l.id}
                     l={l}
                     selectedTag={selectedTag}
-                    onOpen={setActiveId}
+                    onOpen={openList}
                     onTagClick={toggleTag}
+                    isSaved={savedIds.includes(l.id)}
+                    onToggleSaved={toggleSaved}
                   />
                 ))}
               </div>
@@ -490,14 +648,38 @@ export default function App() {
   const total = active.steps.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const timeLabel = formatTime(active.timeMins);
+  const isSaved = savedIds.includes(active.id);
 
   return (
     <>
       <Header mode="run" onBack={() => setActiveId("")} />
       <div className="container">
         <div className="card">
-          <h2 style={{ marginTop: 0 }}>{active.title}</h2>
-          <p>{active.description}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ marginTop: 0 }}>{active.title}</h2>
+              <p>{active.description}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => toggleSaved(active.id)}
+              aria-label={isSaved ? "Unsave list" : "Save list"}
+              title={isSaved ? "Saved" : "Save"}
+              style={{
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                borderRadius: 12,
+                padding: "8px 10px",
+                cursor: "pointer",
+                fontSize: 18,
+                lineHeight: 1,
+                height: 40,
+              }}
+            >
+              {isSaved ? "★" : "☆"}
+            </button>
+          </div>
 
           <p style={{ fontSize: 12, color: "#666" }}>{active.category}</p>
 
