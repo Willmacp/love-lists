@@ -62,6 +62,29 @@ function getProgress(list: Template) {
   return { done, total, pct };
 }
 
+/** Normalise categories for display + grouping.
+ *  Removes "Home & Life Admin" and collapses it into "Home".
+ */
+function normalizeCategory(cat: string) {
+  const c = (cat || "").trim();
+  if (!c) return "Other";
+  if (c.toLowerCase() === "home & life admin") return "Home";
+  return c;
+}
+
+/** Category match for filtering.
+ *  Selecting "Home" should match both "Home" and "Home & Life Admin".
+ */
+function categoryMatches(listCat: string, selectedCat: string) {
+  if (!selectedCat) return true;
+  const sel = normalizeCategory(selectedCat).toLowerCase();
+  const listNorm = normalizeCategory(listCat).toLowerCase();
+  if (sel === "home") {
+    return listNorm === "home"; // normalizeCategory already collapses the old value
+  }
+  return listNorm === sel;
+}
+
 /* ---------------- Header ---------------- */
 
 function Header({
@@ -220,7 +243,7 @@ function CategoryChips({
   onSelect: (cat: string) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
       <SmallPill
         text="All"
         isSelected={selectedCategory === ""}
@@ -259,7 +282,7 @@ function Accordion({
         borderRadius: 14,
         background: "#fff",
         padding: 10,
-        marginTop: 12,
+        marginTop: 10,
       }}
     >
       <summary
@@ -290,7 +313,7 @@ function Accordion({
   );
 }
 
-/* ---------------- List Card ---------------- */
+/* ---------------- List Card (compact) ---------------- */
 
 function ListCardCompact({
   l,
@@ -309,13 +332,14 @@ function ListCardCompact({
 }) {
   const { done, total, pct } = getProgress(l);
   const timeLabel = formatTime(l.timeMins);
+  const displayCat = normalizeCategory(l.category);
 
   return (
     <div
       className="card"
       style={{
         cursor: "pointer",
-        padding: 14, // tighter than default
+        padding: 14,
         marginBottom: 10,
       }}
       onClick={() => onOpen(l.id)}
@@ -353,7 +377,6 @@ function ListCardCompact({
         </button>
       </div>
 
-      {/* tighter one-line description */}
       <p
         style={{
           marginTop: 6,
@@ -369,7 +392,7 @@ function ListCardCompact({
       </p>
 
       <p style={{ fontSize: 12, color: "#666", marginTop: 0, marginBottom: 6 }}>
-        {l.category} • {l.steps.length} steps
+        {displayCat} • {l.steps.length} steps
       </p>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
@@ -386,7 +409,6 @@ function ListCardCompact({
         max={4}
       />
 
-      {/* mini progress stays but tighter */}
       <div style={{ marginTop: 10 }}>
         <div style={{ fontSize: 12, color: "#444", fontWeight: 800 }}>
           {done}/{total} ({pct}%)
@@ -430,7 +452,9 @@ export default function App() {
   );
 
   const categories = useMemo(() => {
-    const uniq = Array.from(new Set(lists.map((l) => l.category).filter(Boolean)));
+    const uniq = Array.from(
+      new Set(lists.map((l) => normalizeCategory(l.category)).filter(Boolean))
+    );
     uniq.sort((a, b) => a.localeCompare(b));
     return uniq;
   }, [lists]);
@@ -438,20 +462,19 @@ export default function App() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const tag = selectedTag.trim().toLowerCase();
-    const cat = selectedCategory.trim().toLowerCase();
 
     return lists.filter((l) => {
       const matchesQuery = !q
         ? true
-        : `${l.title} ${l.description} ${l.category} ${l.tags.join(" ")} ${
-            l.goodFor?.join(" ") ?? ""
-          }`.toLowerCase().includes(q);
+        : `${l.title} ${l.description} ${normalizeCategory(l.category)} ${l.tags.join(
+            " "
+          )} ${l.goodFor?.join(" ") ?? ""}`.toLowerCase().includes(q);
 
       const matchesTag = !tag
         ? true
         : l.tags.some((t) => t.toLowerCase() === tag);
 
-      const matchesCategory = !cat ? true : l.category.toLowerCase() === cat;
+      const matchesCategory = categoryMatches(l.category, selectedCategory);
 
       return matchesQuery && matchesTag && matchesCategory;
     });
@@ -460,7 +483,7 @@ export default function App() {
   const groupedByCategory = useMemo(() => {
     const map = new Map<string, Template[]>();
     for (const l of filtered) {
-      const k = l.category || "Other";
+      const k = normalizeCategory(l.category) || "Other";
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(l);
     }
@@ -561,73 +584,31 @@ export default function App() {
       <>
         <Header mode="explore" />
         <div className="container">
-          <div className="card">
-            <p style={{ marginTop: 0 }}>
-              Practical planning lists for everyday life and big moments.
-            </p>
-
+          <div className="card" style={{ padding: 14 }}>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search (declutter, school, wedding...)"
+              placeholder="Search lists…"
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px 12px",
                 borderRadius: 12,
                 border: "1px solid #e5e7eb",
-                fontSize: 14,
+                fontSize: 13,
               }}
             />
 
             <CategoryChips
-              categories={categories}
-              selectedCategory={selectedCategory}
+              categories={categories.filter((c) => c.toLowerCase() !== "home & life admin")}
+              selectedCategory={normalizeCategory(selectedCategory)}
               onSelect={setSelectedCategory}
             />
 
-            <p style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-              Showing {filtered.length} of {lists.length}
+            <p style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
+              {filtered.length} of {lists.length}
             </p>
-
-            {(selectedTag || selectedCategory) && (
-              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {selectedCategory && (
-                  <button
-                    onClick={() => setSelectedCategory("")}
-                    style={{
-                      fontSize: 12,
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Category: {selectedCategory} ✕
-                  </button>
-                )}
-                {selectedTag && (
-                  <button
-                    onClick={() => setSelectedTag("")}
-                    style={{
-                      fontSize: 12,
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Tag: {selectedTag} ✕
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Compact accordions at top */}
           {showSaved && (
             <Accordion title="⭐ Saved" count={savedLists.length}>
               <div>
@@ -672,7 +653,8 @@ export default function App() {
                 count={arr.length}
                 defaultOpen={
                   selectedCategory
-                    ? cat.toLowerCase() === selectedCategory.toLowerCase()
+                    ? normalizeCategory(cat).toLowerCase() ===
+                      normalizeCategory(selectedCategory).toLowerCase()
                     : false
                 }
               >
@@ -693,7 +675,6 @@ export default function App() {
             ))}
           </Accordion>
 
-          {/* Featured now also an accordion */}
           <Accordion title="✨ Featured" count={featured.length}>
             <div>
               {featured.map((l) => (
@@ -753,7 +734,9 @@ export default function App() {
             </button>
           </div>
 
-          <p style={{ fontSize: 12, color: "#666" }}>{active.category}</p>
+          <p style={{ fontSize: 12, color: "#666" }}>
+            {normalizeCategory(active.category)}
+          </p>
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
             {timeLabel ? <SmallPill text={`⏱ ${timeLabel}`} /> : null}
