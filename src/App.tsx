@@ -102,6 +102,20 @@ function ListCard({
   onOpen: (id: string) => void;
   onTagClick: (tag: string) => void;
 }) {
+  // Read progress for this list (safe fallback)
+  let done = 0;
+  try {
+    const raw = localStorage.getItem(storageKey(l.id));
+    if (raw) {
+      const arr = JSON.parse(raw) as boolean[];
+      done = arr.filter(Boolean).length;
+    }
+  } catch {
+    done = 0;
+  }
+  const total = l.steps.length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
   return (
     <div
       className="card"
@@ -123,10 +137,35 @@ function ListCard({
         onTagClick={onTagClick}
       />
 
+      {/* Mini progress on the card */}
+      <div style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#444", fontWeight: 700 }}>
+          {done}/{total} done ({pct}%)
+        </div>
+        <div
+          style={{
+            height: 8,
+            background: "#e5e7eb",
+            borderRadius: 999,
+            overflow: "hidden",
+            marginTop: 6,
+          }}
+        >
+          <div
+            style={{
+              height: "100%",
+              width: `${pct}%`,
+              background: "#16a34a",
+            }}
+          />
+        </div>
+      </div>
+
       <div className="cardAction">Open</div>
     </div>
   );
 }
+
 
 /* ---------------- App ---------------- */
 
