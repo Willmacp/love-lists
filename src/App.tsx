@@ -98,22 +98,25 @@ function SmallPill({
   isSelected,
   onClick,
   stopPropagation,
+  tight,
 }: {
   text: string;
   isSelected?: boolean;
   onClick?: () => void;
   stopPropagation?: boolean;
+  tight?: boolean;
 }) {
   const asButton = Boolean(onClick);
   const style: React.CSSProperties = {
     fontSize: 12,
-    padding: "6px 10px",
+    padding: tight ? "4px 8px" : "6px 10px",
     borderRadius: 999,
     border: isSelected ? "1px solid #003535" : "1px solid #e5e7eb",
     background: isSelected ? "rgba(0,53,53,0.08)" : "#fff",
     color: "#444",
     cursor: asButton ? "pointer" : "default",
     fontWeight: isSelected ? 800 : 600,
+    lineHeight: 1.1,
   };
 
   if (!asButton) return <span style={style}>{text}</span>;
@@ -133,18 +136,23 @@ function SmallPill({
   );
 }
 
-function TagPills({
+function TagPillsCompact({
   tags,
   selectedTag,
   onTagClick,
+  max = 4,
 }: {
   tags: string[];
   selectedTag: string;
   onTagClick: (tag: string) => void;
+  max?: number;
 }) {
+  const shown = tags.slice(0, max);
+  const remaining = Math.max(0, tags.length - shown.length);
+
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-      {tags.slice(0, 8).map((tag) => {
+      {shown.map((tag) => {
         const isSelected = selectedTag.toLowerCase() === tag.toLowerCase();
         return (
           <SmallPill
@@ -153,28 +161,46 @@ function TagPills({
             isSelected={isSelected}
             onClick={() => onTagClick(tag)}
             stopPropagation
+            tight
           />
         );
       })}
+      {remaining > 0 && (
+        <span
+          style={{
+            fontSize: 12,
+            padding: "4px 8px",
+            borderRadius: 999,
+            border: "1px dashed #e5e7eb",
+            background: "#fff",
+            color: "#666",
+            fontWeight: 700,
+            lineHeight: 1.1,
+          }}
+        >
+          +{remaining}
+        </span>
+      )}
     </div>
   );
 }
 
-function GoodForPills({ items }: { items: string[] }) {
+function GoodForPillsCompact({ items }: { items: string[] }) {
   if (!items?.length) return null;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-      {items.slice(0, 4).map((x) => (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+      {items.slice(0, 2).map((x) => (
         <span
           key={x}
           style={{
             fontSize: 12,
-            padding: "6px 10px",
+            padding: "4px 8px",
             borderRadius: 999,
             border: "1px solid #e5e7eb",
             background: "#fff",
             color: "#555",
             fontWeight: 600,
+            lineHeight: 1.1,
           }}
         >
           {x}
@@ -266,7 +292,7 @@ function Accordion({
 
 /* ---------------- List Card ---------------- */
 
-function ListCard({
+function ListCardCompact({
   l,
   selectedTag,
   onOpen,
@@ -287,14 +313,20 @@ function ListCard({
   return (
     <div
       className="card"
-      style={{ cursor: "pointer" }}
+      style={{
+        cursor: "pointer",
+        padding: 14, // tighter than default
+        marginBottom: 10,
+      }}
       onClick={() => onOpen(l.id)}
       role="button"
       tabIndex={0}
     >
       <div style={{ display: "flex", gap: 10, justifyContent: "space-between" }}>
         <div style={{ flex: 1 }}>
-          <h2 style={{ marginTop: 0, marginBottom: 6 }}>{l.title}</h2>
+          <h2 style={{ marginTop: 0, marginBottom: 6, fontSize: 18 }}>
+            {l.title}
+          </h2>
         </div>
 
         <button
@@ -309,55 +341,68 @@ function ListCard({
             border: "1px solid #e5e7eb",
             background: "#fff",
             borderRadius: 12,
-            padding: "8px 10px",
+            padding: "6px 8px",
             cursor: "pointer",
             fontSize: 16,
             lineHeight: 1,
+            height: 34,
+            minWidth: 34,
           }}
         >
           {isSaved ? "★" : "☆"}
         </button>
       </div>
 
-      <p>{l.description}</p>
+      {/* tighter one-line description */}
+      <p
+        style={{
+          marginTop: 6,
+          marginBottom: 6,
+          display: "-webkit-box",
+          WebkitLineClamp: 1,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          color: "#444",
+        }}
+      >
+        {l.description}
+      </p>
 
-      <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+      <p style={{ fontSize: 12, color: "#666", marginTop: 0, marginBottom: 6 }}>
         {l.category} • {l.steps.length} steps
       </p>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-        {timeLabel ? <SmallPill text={`⏱ ${timeLabel}`} /> : null}
-        {l.difficulty ? <SmallPill text={`⚡ ${l.difficulty}`} /> : null}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+        {timeLabel ? <SmallPill text={`⏱ ${timeLabel}`} tight /> : null}
+        {l.difficulty ? <SmallPill text={`⚡ ${l.difficulty}`} tight /> : null}
       </div>
 
-      <GoodForPills items={l.goodFor} />
+      <GoodForPillsCompact items={l.goodFor} />
 
-      <TagPills tags={l.tags} selectedTag={selectedTag} onTagClick={onTagClick} />
+      <TagPillsCompact
+        tags={l.tags}
+        selectedTag={selectedTag}
+        onTagClick={onTagClick}
+        max={4}
+      />
 
-      <div style={{ marginTop: 12 }}>
+      {/* mini progress stays but tighter */}
+      <div style={{ marginTop: 10 }}>
         <div style={{ fontSize: 12, color: "#444", fontWeight: 800 }}>
-          {done}/{total} done ({pct}%)
+          {done}/{total} ({pct}%)
         </div>
         <div
           style={{
-            height: 8,
+            height: 7,
             background: "#e5e7eb",
             borderRadius: 999,
             overflow: "hidden",
-            marginTop: 6,
+            marginTop: 5,
           }}
         >
-          <div
-            style={{
-              height: "100%",
-              width: `${pct}%`,
-              background: "#16a34a",
-            }}
-          />
+          <div style={{ height: "100%", width: `${pct}%`, background: "#16a34a" }} />
         </div>
       </div>
-
-      <div className="cardAction">Open</div>
     </div>
   );
 }
@@ -438,6 +483,8 @@ export default function App() {
       .filter(Boolean)
       .slice(0, RECENT_MAX) as Template[];
   }, [recentIds, lists]);
+
+  const featured = useMemo(() => lists.slice(0, 3), [lists]);
 
   function toggleTag(tag: string) {
     setSelectedTag((prev) =>
@@ -580,12 +627,12 @@ export default function App() {
             )}
           </div>
 
-          {/* ✅ ACCORDION BLOCKS AT THE TOP */}
+          {/* Compact accordions at top */}
           {showSaved && (
             <Accordion title="⭐ Saved" count={savedLists.length}>
-              <div className="steps">
+              <div>
                 {savedLists.map((l) => (
-                  <ListCard
+                  <ListCardCompact
                     key={l.id}
                     l={l}
                     selectedTag={selectedTag}
@@ -601,9 +648,9 @@ export default function App() {
 
           {showRecent && (
             <Accordion title="🕘 Recent" count={recentLists.length}>
-              <div className="steps">
+              <div>
                 {recentLists.map((l) => (
-                  <ListCard
+                  <ListCardCompact
                     key={l.id}
                     l={l}
                     selectedTag={selectedTag}
@@ -617,7 +664,7 @@ export default function App() {
             </Accordion>
           )}
 
-          <Accordion title="📚 Browse by category" count={groupedByCategory.length} defaultOpen={false}>
+          <Accordion title="📚 Browse by category" count={groupedByCategory.length}>
             {groupedByCategory.map(([cat, arr]) => (
               <Accordion
                 key={cat}
@@ -629,9 +676,9 @@ export default function App() {
                     : false
                 }
               >
-                <div className="steps">
+                <div>
                   {arr.map((l) => (
-                    <ListCard
+                    <ListCardCompact
                       key={l.id}
                       l={l}
                       selectedTag={selectedTag}
@@ -646,25 +693,22 @@ export default function App() {
             ))}
           </Accordion>
 
-          {/* Optional: keep Featured below to keep landing view compact */}
-          <div className="sectionHead" style={{ marginTop: 18 }}>
-            <h3>Featured</h3>
-            <div className="hint">Quick starters</div>
-          </div>
-
-          <div className="steps">
-            {lists.slice(0, 3).map((l) => (
-              <ListCard
-                key={l.id}
-                l={l}
-                selectedTag={selectedTag}
-                onOpen={openList}
-                onTagClick={toggleTag}
-                isSaved={savedIds.includes(l.id)}
-                onToggleSaved={toggleSaved}
-              />
-            ))}
-          </div>
+          {/* Featured now also an accordion */}
+          <Accordion title="✨ Featured" count={featured.length}>
+            <div>
+              {featured.map((l) => (
+                <ListCardCompact
+                  key={l.id}
+                  l={l}
+                  selectedTag={selectedTag}
+                  onOpen={openList}
+                  onTagClick={toggleTag}
+                  isSaved={savedIds.includes(l.id)}
+                  onToggleSaved={toggleSaved}
+                />
+              ))}
+            </div>
+          </Accordion>
         </div>
       </>
     );
@@ -716,15 +760,16 @@ export default function App() {
             {active.difficulty ? <SmallPill text={`⚡ ${active.difficulty}`} /> : null}
           </div>
 
-          <GoodForPills items={active.goodFor} />
+          <GoodForPillsCompact items={active.goodFor} />
 
-          <TagPills
+          <TagPillsCompact
             tags={active.tags}
             selectedTag={selectedTag}
             onTagClick={(tag) => {
               setActiveId("");
               setSelectedTag(tag);
             }}
+            max={6}
           />
 
           <div className="progressWrap">
